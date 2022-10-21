@@ -46,6 +46,7 @@ export const ImageGallery = ({ imageRequest }) => {
           setIsLoading(false);
         });
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [imageRequest]);
 
   useEffect(() => {
@@ -72,6 +73,7 @@ export const ImageGallery = ({ imageRequest }) => {
           return;
         }
       });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [page]);
 
   const onLoadMore = () => {
