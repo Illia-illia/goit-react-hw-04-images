@@ -100,7 +100,7 @@ export const ImageGallery = ({ imageRequest }) => {
       {isModal && <Modal largeImage={largeImage} onClose={closeModal} />}
       {images.length > 0 && (
         <Button type="button" onClick={onLoadMore}>
-          Load more
+          Load more...
         </Button>
       )}
     </>
