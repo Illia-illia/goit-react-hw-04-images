@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState } from 'react';
 import { AiOutlineSearch } from 'react-icons/ai';
 import { toast } from 'react-toastify';
 
@@ -9,44 +9,40 @@ import {
   SearchFormInput,
 } from './Searchbar.styled';
 
-export class Searchbar extends Component {
-  state = {
-    imageRequest: '',
-  };
+export const Searchbar = ({ onFormSubmit }) => {
+  const [imageRequest, setImageRequest] = useState('');
 
-  onInputValue = e => {
+  const onInputValue = e => {
     const imageRequest = e.currentTarget.value.toLowerCase();
-    this.setState({ imageRequest });
+    setImageRequest(imageRequest);
   };
 
-  onSubmit = e => {
+  const onSubmit = e => {
     e.preventDefault();
 
-    if (this.state.imageRequest.trim() === '') {
+    if (imageRequest.trim() === '') {
       return toast.error('Please enter a request');
     }
-    this.props.onSubmit(this.state.imageRequest.trim());
-    this.setState({ imageRequest: '' });
+    onFormSubmit(imageRequest.trim());
+    setImageRequest('');
   };
 
-  render() {
-    return (
-      <Header>
-        <SearchForm onSubmit={this.onSubmit}>
-          <SearchFormButton type="submit">
-            <AiOutlineSearch size="32px" />
-          </SearchFormButton>
+  return (
+    <Header>
+      <SearchForm onSubmit={onSubmit}>
+        <SearchFormButton type="submit">
+          <AiOutlineSearch size="32px" />
+        </SearchFormButton>
 
-          <SearchFormInput
-            type="text"
-            autocomplete="off"
-            autoFocus
-            placeholder="Search images and photos"
-            onChange={this.onInputValue}
-            value={this.state.imageRequest}
-          />
-        </SearchForm>
-      </Header>
-    );
-  }
-}
+        <SearchFormInput
+          type="text"
+          autocomplete="off"
+          autoFocus
+          placeholder="Search images and photos"
+          onChange={onInputValue}
+          value={imageRequest}
+        />
+      </SearchForm>
+    </Header>
+  );
+};

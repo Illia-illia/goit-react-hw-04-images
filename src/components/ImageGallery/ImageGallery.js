@@ -1,4 +1,4 @@
-import { Component } from 'react';
+import { useState, useEffect } from 'react';
 import { toast } from 'react-toastify';
 import { PropTypes } from 'prop-types';
 
@@ -11,112 +11,101 @@ import { ImagesList, Button, Item } from './ImageGallery.styled';
 const API_KEY = '29578283-f288e571e878ef9103bc84709';
 const BASE_URL = 'https://pixabay.com/api/?';
 
-export class ImageGallery extends Component {
-  state = {
-    images: [],
-    isLoading: false,
-    page: 1,
-    total: 0,
-    largeImage: null,
-    isModal: false,
-  };
+export const ImageGallery = ({ imageRequest }) => {
+  const [images, setImages] = useState([]);
+  const [isLoading, setIsLoading] = useState(false);
+  const [page, setPage] = useState(1);
+  const [total, setTotal] = useState(0);
+  const [largeImage, setLargeImage] = useState(null);
+  const [isModal, setIsModal] = useState(false);
 
-  async componentDidUpdate(prevProps, prevState) {
-    const prevRequest = prevProps.imageRequest;
-    const nextRequest = this.props.imageRequest;
-
-    if (prevRequest !== nextRequest) {
-      this.setState({ isLoading: true, images: [] });
-      await fetch(
-        `${BASE_URL}q=${nextRequest}&page=${this.state.page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
+  useEffect(() => {
+    if (imageRequest.trim() !== '') {
+      setIsLoading(true);
+      setImages([]);
+      fetch(
+        `${BASE_URL}q=${imageRequest}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
       )
         .then(r => r.json())
         .then(images => {
-          this.setState({ page: 1 });
+          setPage(1);
           const total = images.totalHits - 12;
           if (images.hits.length === 0) {
             toast.error(
               'Sorry, there are no images matching your search query. Please try again.'
             );
-            return this.setState({
-              images: [],
-              isLoading: false,
-            });
+            setImages([]);
+            setIsLoading(false);
+            return;
           }
-          this.setState({
-            images: images.hits,
-            isLoading: false,
-            total,
-          });
+          setImages(images.hits);
+          setIsLoading(false);
+          setTotal(total);
         })
         .finally(() => {
-          this.setState({ isLoading: false });
+          setIsLoading(false);
         });
     }
+  }, [imageRequest]);
 
-    if (prevState.page !== this.state.page) {
-      this.setState({ isLoading: true });
-      fetch(
-        `${BASE_URL}q=${nextRequest}&page=${this.state.page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
-      )
-        .then(r => r.json())
-        .then(images => {
-          if (this.state.total <= 0) {
-            toast.info(
-              "We're sorry, but you've reached the end of search results."
-            );
-            this.setState({ isLoading: false });
-          }
-          if (this.state.page > 1) {
-            return this.setState({
-              images: [...prevState.images, ...images.hits],
-              isLoading: false,
-              total: prevState.total - 12,
-            });
-          }
-        });
+  useEffect(() => {
+    if (page > 1) {
+      setIsLoading(true);
     }
-  }
 
-  onLoadMore = () => {
-    this.setState(prevState => ({
-      page: prevState.page + 1,
-    }));
+    fetch(
+      `${BASE_URL}q=${imageRequest}&page=${page}&key=${API_KEY}&image_type=photo&orientation=horizontal&per_page=12`
+    )
+      .then(r => r.json())
+      .then(picture => {
+        if (total < 0) {
+          toast.info(
+            "We're sorry, but you've reached the end of search results."
+          );
+          setIsLoading(false);
+        }
+        if (page > 1) {
+          setImages([...images, ...picture.hits]);
+          setIsLoading(false);
+          setTotal(total - 12);
+          console.log(total);
+          return;
+        }
+      });
+  }, [page]);
+
+  const onLoadMore = () => {
+    setPage(page + 1);
   };
 
-  openModal = largeImage => {
-    this.setState({ isModal: true, largeImage });
+  const openModal = largeImage => {
+    setIsModal(true);
+    setLargeImage(largeImage);
   };
 
-  closeModal = () => this.setState({ isModal: false });
+  const closeModal = () => setIsModal(false);
 
-  render() {
-    const { images, isLoading, largeImage } = this.state;
-    const { imageRequest } = this.props;
-    return (
-      <>
-        <ImagesList>
-          {!imageRequest && <p>Please enter a request</p>}
-          {images &&
-            this.state.images.map(images => (
-              <Item key={images.id}>
-                <ImageGalleryItem images={images} onClick={this.openModal} />
-              </Item>
-            ))}
-        </ImagesList>
-        {isLoading && <Loader />}
-        {this.state.isModal && (
-          <Modal largeImage={largeImage} onClose={this.closeModal} />
-        )}
-        {images.length > 0 && (
-          <Button type="button" onClick={this.onLoadMore}>
-            Load more
-          </Button>
-        )}
-      </>
-    );
-  }
-}
+  return (
+    <>
+      <ImagesList>
+        {!imageRequest && <p>Please enter a request</p>}
+        {images &&
+          images.map(images => (
+            <Item key={images.id}>
+              <ImageGalleryItem images={images} onClick={openModal} />
+            </Item>
+          ))}
+      </ImagesList>
+      {isLoading && <Loader />}
+      {isModal && <Modal largeImage={largeImage} onClose={closeModal} />}
+      {images.length > 0 && (
+        <Button type="button" onClick={onLoadMore}>
+          Load more
+        </Button>
+      )}
+    </>
+  );
+};
 
 ImageGallery.propTypes = {
   imageRequest: PropTypes.string.isRequired,
